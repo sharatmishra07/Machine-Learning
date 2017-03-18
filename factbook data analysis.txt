@@ -1,0 +1,73 @@
+
+set.seed(500)
+factbook <- read.csv("C:/Users/Admin/Desktop/ML/factbook.csv", sep=";", stringsAsFactors=FALSE)
+factbook[factbook==""] <- NA
+str(factbook)
+# Excluding the first row of the dataset
+factbook <- factbook[2:nrow(factbook),]
+# converting all variables other than country variable to type numeric 
+for(i in 2:ncol(factbook)){
+  factbook[,i]<-as.numeric(factbook[,i])
+}
+str(factbook)
+head(factbook)
+tail(factbook)
+summary(factbook)
+
+#Imputing missing values
+library(VIM)
+md.pattern(factbook)
+imputation-plot<-aggr(factbook,col=c('black','blue'),
+                      numbers=TRUE,sortVars=TRUE,
+                      labels=names(factbook),gap=3,
+                      ylab=c("Missing Data","Pattern"))
+library(mice)
+tempData <- mice(factbook,m=5,maxit=10,meth='cart',seed =100)
+completeData<-complete(tempdata,4)
+completeData$Electricity...production.kWh. <- NULL
+
+imputation-plot<-aggr(completeData,col=c('black','blue'),
+                      numbers=TRUE,sortVars=TRUE,
+                      labels=names(completeData),gap=1,
+                      ylab=c("Missing Data","Pattern"), plot=TRUE)
+summary(completeData)
+
+#80-20 split
+set.seed(400)
+train-no <- sample(1:nrow(completeData),0.8*nrow(completeData))
+train <- completeData[train-no,]
+test <- completeData[-train-no,]
+lm1 <- lm(Electricity...consumption.kWh. ~ Area.sq.km. + Birth.rate.births.1000.population. + Death.rate.deaths.1000.population. + Infant.mortality.rate.deaths.1000.live.births.,data=train)
+summary(lm)
+predict(lm,test)
+layout(matrix(c(1,2,3,4),2,2))
+plot(lm)
+
+
+#70-30 split
+set.seed(400)
+train-no2 <- sample(1:nrow(completeData),0.7*nrow(completeData))
+train2 <- completeData[train-no2,]
+test2 <- completeData[-train-no2,]
+lm2 <- lm(Electricity...consumption.kWh. ~ Area.sq.km. + Birth.rate.births.1000.population. + Death.rate.deaths.1000.population. + Infant.mortality.rate.deaths.1000.live.births.,data=train2)
+summary(lm2)
+predict(lm2,test2)
+layout(matrix(c(1,2,3,4),2,2))
+plot(lm2)
+
+#Cross-Validation
+library(DAAG)
+layout(1)
+lm3 <-cv.lm(completeData,form.lm=formula(Electricity...consumption.kWh. ~ Area.sq.km. + Birth.rate.births.1000.population. + Death.rate.deaths.1000.population. + Infant.mortality.rate.deaths.1000.live.births.),m=11)
+
+#testset using first 20 rows of data and testing it on all the models created
+testset <- completeData[1:20,]
+testset$model1<-predict(lm,testset)
+testset$model2<-predict(lm2,testset)
+testset$Cvmodel <- lm3[1:20,]$cvpred
+
+#evaluating the models with the actuals
+output <- testset[,c("Electricity...consumption.kWh.","model1","model2","Cvmodel")]
+output
+
+#Evaluating the output it is found that cross validation model performs much better than the 80-20 training test split and 70-30 training test split.
