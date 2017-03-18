@@ -1,0 +1,80 @@
+---
+Title: "Laptop Battery Life"
+Author: "sharat mishra"
+output:  html_document
+fig_caption: no
+keep_md: yes
+toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Reading the source file
+```{r, echo=TRUE}
+ Battery <- read.csv("C:/Users/Admin/Desktop/battery.csv")
+head(Battery)
+```
+
+
+
+checking for missing value
+
+```{r, echo=TRUE}
+ library(VIM)
+ imputation_plot <- aggr(Battery,col = c("black","yellow"),
+                             numbers = TRUE,sortVars = TRUE,
+                             labels = names(Battery),gap = 3,
+                             ylab = c("Missing Data","Pattern"))
+```                             
+
+
+Scatter plot to see the data
+
+```{r, echo=TRUE}
+ plot(Last.time~charge.time,data = Battery)
+```
+
+
+As we see from scatter plot the maximum last life 
+of battery is 8 hours at charge time of 4 and above
+so removing values above 4 
+
+
+```{r,echo=TRUE}
+Batterynew <- subset(Battery,subset=charge.time<= 4)
+Batterymodel <- lm(Last.time~charge.time,data = Batterynew)
+fitted(Batterymodel)
+```
+```{r,echo=TRUE, echo=TRUE}
+coef(Batterymodel)
+Batterymodel$residuals
+summary(Batterymodel)
+```
+
+
+Plotting the parameter of model
+
+```{r,echo=TRUE}
+layout(matrix(c(1,2,3,4),2,2))
+plot(Batterymodel)
+```
+
+
+plotting the model 
+
+```{r,echo=TRUE}
+layout(1)
+plot(Batterynew$charge.time,Batterynew$Last.time)
+abline(Batterymodel)
+```
+
+printing the value of model for given input
+
+```{r,echo=TRUE}
+input <-  data.frame("charge.time" = 1.5)
+output <- ifelse(input<=4,predict(Batterymodel,input),8)
+print(output)
+```
